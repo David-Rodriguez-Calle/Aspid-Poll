@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#07090f">
+<title>ASPID Poll</title>
+<style>
+  :root{
+    --bg:#07090f; --bg2:#0e1320; --ink:#f2f4f8; --muted:#8a93a8;
+    --accent:#ff6a2b; --accent2:#ffb347; --line:#1f2740;
+    --c1:#ff6a2b; --c2:#3fa7ff; --c3:#38d39f; --c4:#c77dff; --c5:#ffd23f; --c6:#ff4f7b;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{
+    background:radial-gradient(ellipse at 50% 120%,#1a1030 0%,var(--bg) 55%) fixed,var(--bg);
+    color:var(--ink);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    overflow:hidden;user-select:none;-webkit-user-select:none;touch-action:manipulation;
+  }
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
+  .app{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;
+    padding:max(24px,env(safe-area-inset-top)) 28px max(24px,env(safe-area-inset-bottom))}
+  header{display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:2vh}
+  #logo{font-weight:900;letter-spacing:.35em;font-size:clamp(18px,2.6vw,28px);color:var(--accent);cursor:default;padding:8px}
+  #logo small{display:block;font-size:.45em;letter-spacing:.3em;color:var(--muted);font-weight:600;text-align:center}
+  h1{text-align:center;font-size:clamp(28px,5vw,58px);line-height:1.1;font-weight:800;margin:1vh auto 4vh;max-width:18ch;text-wrap:balance}
+  .grid{flex:1;display:grid;gap:clamp(12px,2vw,22px);grid-template-columns:repeat(2,1fr);grid-auto-rows:1fr;min-height:0}
+  .grid.n1{grid-template-columns:1fr}
+  .grid.n3 .opt:last-child{grid-column:1/-1}
+  .grid.n5 .opt:last-child{grid-column:1/-1}
+  @media (orientation:landscape){
+    .grid.n3{grid-template-columns:repeat(3,1fr)} .grid.n3 .opt:last-child{grid-column:auto}
+    .grid.n6{grid-template-columns:repeat(3,1fr)}
+  }
+  .opt{
+    border:none;border-radius:26px;color:#fff;font:inherit;font-weight:800;
+    font-size:clamp(22px,3.6vw,42px);line-height:1.15;padding:18px;cursor:pointer;
+    background:linear-gradient(160deg,var(--c) 0%,color-mix(in srgb,var(--c) 55%,#000) 100%);
+    box-shadow:0 10px 30px -10px var(--c),inset 0 1px 0 rgba(255,255,255,.25);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.3em;
+    transition:transform .08s ease,filter .08s ease;text-wrap:balance;
+  }
+  .opt .emo{font-size:1.5em;line-height:1}
+  .opt:active{transform:scale(.96);filter:brightness(1.15)}
+  .hint{text-align:center;color:var(--muted);font-size:clamp(14px,1.6vw,18px);margin-top:2.5vh}
+
+  /* Thank-you overlay */
+  #thanks{position:fixed;inset:0;z-index:5;display:none;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(7,9,15,.94);text-align:center;padding:24px}
+  #thanks.on{display:flex;animation:fade .2s ease}
+  #thanks .rocket{font-size:clamp(80px,14vw,160px);animation:launch 1.9s ease-in forwards}
+  #thanks h2{font-size:clamp(34px,6vw,72px);font-weight:900;margin-top:2vh}
+  #thanks p{color:var(--muted);font-size:clamp(18px,2.4vw,26px);margin-top:1vh}
+  #thanks .pick{color:var(--accent2);font-weight:700}
+  @keyframes launch{0%{transform:translateY(0)}35%{transform:translateY(6px) rotate(-1deg)}100%{transform:translateY(-70vh)}}
+  @keyframes fade{from{opacity:0}to{opacity:1}}
+
+  /* Admin */
+  #admin{position:fixed;inset:0;z-index:10;display:none;background:var(--bg2);overflow:auto;padding:28px;user-select:text;-webkit-user-select:text}
+  #admin.on{display:block}
+  #admin .wrap{max-width:760px;margin:0 auto}
+  #admin h3{font-size:24px;margin-bottom:6px}
+  #admin h4{font-size:15px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted);margin:28px 0 10px}
+  .total{font-size:42px;font-weight:900;color:var(--accent)}
+  .bar{margin:10px 0}
+  .bar .lbl{display:flex;justify-content:space-between;font-size:17px;margin-bottom:4px;gap:12px}
+  .bar .track{height:14px;background:#0a0e18;border-radius:8px;overflow:hidden}
+  .bar .fill{height:100%;border-radius:8px}
+  label{display:block;font-size:14px;color:var(--muted);margin:12px 0 4px}
+  input,textarea{width:100%;background:#0a0e18;color:var(--ink);border:1px solid var(--line);border-radius:10px;padding:12px;font:inherit;font-size:17px}
+  textarea{min-height:170px;font-family:ui-monospace,Menlo,monospace;font-size:15px}
+  .row{display:flex;flex-wrap:wrap;gap:10px;margin-top:14px}
+  .btn{border:1px solid var(--line);background:#141b2e;color:var(--ink);border-radius:12px;padding:13px 18px;font:inherit;font-size:16px;font-weight:600;cursor:pointer}
+  .btn.primary{background:var(--accent);border-color:var(--accent);color:#111}
+  .btn.danger{border-color:#7a2333;color:#ff8597}
+  .note{color:var(--muted);font-size:14px;margin-top:8px;line-height:1.5}
+  #toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#222c47;color:#fff;padding:12px 20px;border-radius:12px;z-index:20;display:none;font-size:16px}
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+
+<div class="app">
+  <header><div id="logo">ASPID<small>LEEM · ETSIAE</small></div></header>
+  <h1 id="question"></h1>
+  <div id="grid" class="grid"></div>
+  <div class="hint">Tap an option to vote 🚀</div>
+</div>
+
+<div id="thanks">
+  <div class="rocket">🚀</div>
+  <h2>Vote counted!</h2>
+  <p>You voted: <span class="pick" id="pick"></span></p>
+  <p>Follow ASPID to see what happens at launch</p>
+</div>
+
+<div id="admin">
+  <div class="wrap">
+    <h3>Stand panel</h3>
+    <div class="note">Opens by tapping the ASPID logo 5 times. Votes are stored on this device.</div>
+
+    <h4>Results</h4>
+    <div><span class="total" id="total">0</span> votes</div>
+    <div id="bars"></div>
+
+    <h4>Question and options</h4>
+    <label for="qIn">Question</label>
+    <input id="qIn">
+    <label for="oIn">Options (one per line, max 6). You can start each with an emoji.</label>
+    <textarea id="oIn"></textarea>
+    <div class="note">If you edit an option, its votes are kept by position (the 1st stays the 1st).</div>
+    <div class="row"><button class="btn primary" id="save">Save changes</button></div>
+
+    <h4>Data</h4>
+    <div class="row">
+      <button class="btn" id="csv">Download CSV</button>
+      <button class="btn" id="copy">Copy summary</button>
+      <button class="btn" id="fs">Fullscreen</button>
+      <button class="btn danger" id="undo">Remove last vote</button>
+      <button class="btn danger" id="reset">Delete all votes</button>
+    </div>
+
+    <div class="row" style="margin-top:30px"><button class="btn primary" id="close">Back to voting</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+  var KEY_CFG = 'aspidPoll.cfg.v2', KEY_LOG = 'aspidPoll.log.v2';
+  var COLORS = ['--c1','--c2','--c3','--c4','--c5','--c6'];
+  var DEFAULT = {
+    question: 'What will happen to ASPID?',
+    options: ['🏆 We win S3','🪨 Ballistic landing','💥 RUD (Rapid Unscheduled Disassembly)','🔌 Electronics failure, no launch']
+  };
+
+  // Storage with in-memory fallback
+  var mem = {};
+  function load(k, d){ try{ var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return mem[k] !== undefined ? mem[k] : d; } }
+  function save(k, v){ mem[k] = v; try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){ toast('⚠️ Could not save on this device'); } }
+
+  var cfg = load(KEY_CFG, DEFAULT);
+  var log = load(KEY_LOG, []);   // [{t: ISO, i: index, label}]
+
+  var $ = function(id){ return document.getElementById(id); };
+
+  function split(label){
+    var m = label.match(/^(\p{Extended_Pictographic}[️‍\p{Extended_Pictographic}]*)\s*(.*)$/u);
+    return m ? {emo:m[1], text:m[2]} : {emo:'', text:label};
+  }
+
+  function render(){
+    $('question').textContent = cfg.question;
+    var g = $('grid'); g.innerHTML = '';
+    g.className = 'grid n' + cfg.options.length;
+    cfg.options.forEach(function(o, i){
+      var b = document.createElement('button');
+      b.className = 'opt';
+      b.style.setProperty('--c', 'var(' + COLORS[i % COLORS.length] + ')');
+      var s = split(o);
+      if (s.emo){ var e = document.createElement('span'); e.className = 'emo'; e.textContent = s.emo; b.appendChild(e); }
+      var t = document.createElement('span'); t.textContent = s.text; b.appendChild(t);
+      b.addEventListener('click', function(){ vote(i); });
+      g.appendChild(b);
+    });
+  }
+
+  var locked = false;
+  function vote(i){
+    if (locked) return;
+    locked = true;
+    log.push({t: new Date().toISOString(), i: i, label: cfg.options[i]});
+    save(KEY_LOG, log);
+    $('pick').textContent = cfg.options[i];
+    var th = $('thanks');
+    var r = th.querySelector('.rocket'); r.style.animation = 'none'; void r.offsetWidth; r.style.animation = '';
+    th.classList.add('on');
+    setTimeout(function(){ th.classList.remove('on'); locked = false; }, 2200);
+  }
+
+  // Admin: 5 taps on logo within 2.5 s
+  var taps = [];
+  $('logo').addEventListener('click', function(){
+    var now = Date.now(); taps = taps.filter(function(x){ return now - x < 2500; }); taps.push(now);
+    if (taps.length >= 5){ taps = []; openAdmin(); }
+  });
+
+  function counts(){
+    var c = cfg.options.map(function(){ return 0; });
+    log.forEach(function(v){ if (v.i < c.length) c[v.i]++; });
+    return c;
+  }
+
+  function openAdmin(){
+    $('qIn').value = cfg.question;
+    $('oIn').value = cfg.options.join('\n');
+    drawBars();
+    $('admin').classList.add('on');
+  }
+  function drawBars(){
+    var c = counts(), tot = c.reduce(function(a,b){return a+b;},0);
+    $('total').textContent = tot;
+    var box = $('bars'); box.innerHTML = '';
+    cfg.options.forEach(function(o, i){
+      var pct = tot ? Math.round(c[i]*100/tot) : 0;
+      var d = document.createElement('div'); d.className = 'bar';
+      var l = document.createElement('div'); l.className = 'lbl';
+      var a = document.createElement('span'); a.textContent = o;
+      var b = document.createElement('span'); b.textContent = c[i] + ' · ' + pct + '%';
+      l.appendChild(a); l.appendChild(b);
+      var tr = document.createElement('div'); tr.className = 'track';
+      var f = document.createElement('div'); f.className = 'fill';
+      f.style.width = pct + '%'; f.style.background = 'var(' + COLORS[i % COLORS.length] + ')';
+      tr.appendChild(f); d.appendChild(l); d.appendChild(tr); box.appendChild(d);
+    });
+  }
+
+  $('save').addEventListener('click', function(){
+    var opts = $('oIn').value.split('\n').map(function(s){return s.trim();}).filter(Boolean).slice(0,6);
+    if (!opts.length){ toast('Add at least one option'); return; }
+    cfg = {question: $('qIn').value.trim() || DEFAULT.question, options: opts};
+    save(KEY_CFG, cfg); render(); drawBars(); toast('Saved ✓');
+  });
+  $('close').addEventListener('click', function(){ $('admin').classList.remove('on'); });
+  $('undo').addEventListener('click', function(){
+    if (!log.length) return;
+    var last = log[log.length-1];
+    if (confirm('Remove the last vote ("' + last.label + '")?')){ log.pop(); save(KEY_LOG, log); drawBars(); }
+  });
+  $('reset').addEventListener('click', function(){
+    if (confirm('Delete ALL votes? Download the CSV first if you need them.') && confirm('Are you really sure?')){
+      log = []; save(KEY_LOG, log); drawBars(); toast('Votes deleted');
+    }
+  });
+  $('csv').addEventListener('click', function(){
+    var rows = [['timestamp','option_n','option']].concat(log.map(function(v){ return [v.t, v.i+1, v.label]; }));
+    var csv = rows.map(function(r){ return r.map(function(x){ return '"' + String(x).replace(/"/g,'""') + '"'; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type:'text/csv'}));
+    a.download = 'aspid-votes-' + new Date().toISOString().slice(0,10) + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+  $('copy').addEventListener('click', function(){
+    var c = counts(), tot = c.reduce(function(a,b){return a+b;},0);
+    var txt = cfg.question + ' (' + tot + ' votes)\n' + cfg.options.map(function(o,i){ return o + ': ' + c[i] + ' (' + (tot?Math.round(c[i]*100/tot):0) + '%)'; }).join('\n');
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function(){ toast('Summary copied'); }, function(){ prompt('Copy the summary:', txt); });
+  });
+  $('fs').addEventListener('click', function(){
+    var el = document.documentElement;
+    (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
+    $('admin').classList.remove('on');
+  });
+
+  function toast(m){ var t = $('toast'); t.textContent = m; t.style.display = 'block'; clearTimeout(t._h); t._h = setTimeout(function(){ t.style.display = 'none'; }, 1800); }
+
+  // Prevent pinch/double-tap zoom & context menu on the kiosk
+  document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+  document.addEventListener('contextmenu', function(e){ if (!$('admin').classList.contains('on')) e.preventDefault(); });
+
+  // Starfield
+  var cv = $('stars'), cx = cv.getContext('2d'), st = [];
+  function size(){ cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+    st = Array.from({length: 140}, function(){ return {x:Math.random()*cv.width, y:Math.random()*cv.height, r:Math.random()*1.4*devicePixelRatio+.3, s:Math.random()*.25+.05}; }); }
+  function tick(){ cx.clearRect(0,0,cv.width,cv.height); cx.fillStyle = '#fff';
+    st.forEach(function(p){ p.y -= p.s*devicePixelRatio; if (p.y < 0) p.y = cv.height; cx.globalAlpha = .35 + p.r/4; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,7); cx.fill(); });
+    requestAnimationFrame(tick); }
+  addEventListener('resize', size); size(); tick();
+
+  render();
+})();
+</script>
+</body>
+</html>
